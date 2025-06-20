@@ -12,14 +12,27 @@ import org.bukkit.scheduler.BukkitTask;
 import java.util.*;
 
 public class DistancePlace extends JavaPlugin implements CommandExecutor, TabCompleter {
-    private static final int DEFAULT_REACH = 30;
+    private static DistancePlace instance;
+
+    private int defaultReach;
     private final Map<UUID, Integer> reachMap = new HashMap<>();
     private final Map<UUID, Integer> speedMap = new HashMap<>(); // ms
     private final Map<UUID, Boolean> modeMap = new HashMap<>();
     private final Map<UUID, BukkitTask> taskMap = new HashMap<>();
 
     @Override
+    public void onLoad() {
+        instance = this;
+    }
+
+    public static DistancePlace getInstance(){
+        return instance;
+    }
+
+    @Override
     public void onEnable() {
+        saveDefaultConfig();
+        defaultReach = getConfig().getInt("maxDistance", 30);
         getServer().getPluginManager().registerEvents(new PlacementListener(this), this);
         PluginCommand cmd = getCommand("reach");
         if (cmd != null) {
@@ -34,11 +47,12 @@ public class DistancePlace extends JavaPlugin implements CommandExecutor, TabCom
             task.cancel();
         }
         taskMap.clear();
+        org.bukkit.event.HandlerList.unregisterAll(this);
     }
 
     /* getters / setters */
     public int getReach(Player p) {
-        return reachMap.getOrDefault(p.getUniqueId(), DEFAULT_REACH);
+        return reachMap.getOrDefault(p.getUniqueId(), defaultReach);
     }
     public void setReach(Player p, int v) { reachMap.put(p.getUniqueId(), v); }
     public void resetReach(Player p) { reachMap.remove(p.getUniqueId()); }
