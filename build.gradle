@@ -2,9 +2,9 @@
 plugins { id 'java' }
 group='net.lulg'
 version='1.1.1'
-java { toolchain{ languageVersion.set(JavaLanguageVersion.of(17)) } }
+java { toolchain{ languageVersion.set(JavaLanguageVersion.of(21)) } }
 repositories { mavenCentral(); maven { url 'https://repo.papermc.io/repository/maven-public/' } }
 dependencies { compileOnly 'io.papermc.paper:paper-api:1.20.4-R0.1-SNAPSHOT' }
 tasks.withType(JavaCompile).configureEach { options.encoding='UTF-8'; options.release.set(17) }
-jar { archiveBaseName.set('DistancePlace'); archiveVersion.set(version) }
+jar { archiveBaseName.set('DistancePlacePlus'); archiveVersion.set(version) }
 processResources { filesMatching('plugin.yml'){ expand(version:project.version) } }

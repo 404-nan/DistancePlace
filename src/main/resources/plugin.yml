@@ -1,13 +1,7 @@
-
-name: DistancePlace
+name: DistancePlacePlus
 version: ${version}
-main: net.lulg.distanceplace.DistancePlacePlugin
+main: net.lulg.distanceplaceplus.DistancePlacePlusPlugin
 api-version: 1.20
-description: Right-click distant placement. Use /distanceplace setdistance <blocks>.
 commands:
-  distanceplace:
-    permission: distanceplace.admin
-    usage: /distanceplace setdistance <blocks>|help
-permissions:
-  distanceplace.admin:
-    default: op
+  reach:
+    usage: /reach
