@@ -170,7 +170,12 @@ public class DistancePlace extends JavaPlugin implements CommandExecutor, TabCom
         int ms=getSpeed(p);
         if(ms<0) return;
         BukkitTask task=getServer().getScheduler().runTaskTimer(this,()->{
-            if(!p.isOnline()){ clearTask(p); return; }
+            if(!p.isOnline() || !p.getInventory().getItemInMainHand().getType().isBlock()
+                    || p.getInventory().getItemInMainHand().getType().isAir()){
+                // Logged out, or ran out of blocks / switched to a non-block item: stop auto place.
+                clearTask(p);
+                return;
+            }
             PlacementListener.attemptPlace(p,this);
         },msToTicks(ms),msToTicks(ms));
         setTask(p,task);
