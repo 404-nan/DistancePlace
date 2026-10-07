@@ -15,6 +15,9 @@ public class DistancePlace extends JavaPlugin implements CommandExecutor, TabCom
     private static DistancePlace instance;
 
     private int defaultReach;
+    private int maxReach;
+    private int minSpeedMs;
+    private boolean airPlace;
     private final Map<UUID, Integer> reachMap = new HashMap<>();
     private final Map<UUID, Integer> speedMap = new HashMap<>(); // ms
     private final Map<UUID, Boolean> modeMap = new HashMap<>();
@@ -32,7 +35,10 @@ public class DistancePlace extends JavaPlugin implements CommandExecutor, TabCom
     @Override
     public void onEnable() {
         saveDefaultConfig();
-        defaultReach = getConfig().getInt("maxDistance", 30);
+        maxReach = Math.max(1, getConfig().getInt("reachLimit", 256));
+        minSpeedMs = Math.max(50, getConfig().getInt("minSpeedMs", 50));
+        airPlace = getConfig().getBoolean("airPlace", true);
+        defaultReach = clampReach(getConfig().getInt("maxDistance", 30));
         getServer().getPluginManager().registerEvents(new PlacementListener(this), this);
         PluginCommand cmd = getCommand("reach");
         if (cmd != null) {
@@ -56,6 +62,18 @@ public class DistancePlace extends JavaPlugin implements CommandExecutor, TabCom
     }
     public void setReach(Player p, int v) { reachMap.put(p.getUniqueId(), v); }
     public void resetReach(Player p) { reachMap.remove(p.getUniqueId()); }
+    public int getMaxReach() { return maxReach; }
+    public boolean isAirPlaceEnabled() { return airPlace; }
+    private int clampReach(int v) { return Math.max(1, Math.min(maxReach, v)); }
+
+    /** Drops all per-player state so offline players don't keep tasks or map entries alive. */
+    public void forget(Player p) {
+        clearTask(p);
+        UUID id = p.getUniqueId();
+        reachMap.remove(id);
+        speedMap.remove(id);
+        modeMap.remove(id);
+    }
 
     public int getSpeed(Player p) { return speedMap.getOrDefault(p.getUniqueId(), -1); }
     public void setSpeed(Player p, int ms) { speedMap.put(p.getUniqueId(), ms); }
@@ -90,9 +108,9 @@ public class DistancePlace extends JavaPlugin implements CommandExecutor, TabCom
             case "mode" -> { return handleMode(p, Arrays.copyOfRange(args,1,args.length)); }
             default -> {
                 try{
-                    int d = Integer.parseInt(args[0]);
+                    int d = clampReach(Integer.parseInt(args[0]));
                     setReach(p, d);
-                    sender.sendMessage("§aReach set to " + d + " blocks");
+                    sender.sendMessage("§aReach set to " + d + " blocks (max " + maxReach + ")");
                 }catch(NumberFormatException ex){
                     sender.sendMessage("§cNot a number");
                 }
@@ -110,7 +128,7 @@ public class DistancePlace extends JavaPlugin implements CommandExecutor, TabCom
             }
             default -> {
                 try{
-                    int ms=Integer.parseInt(args[0]);
+                    int ms=Math.max(minSpeedMs, Integer.parseInt(args[0]));
                     setSpeed(p, ms);
                     p.sendMessage("§aAuto place speed set to "+ms+"ms");
                 }catch(NumberFormatException ex){
@@ -152,6 +170,7 @@ public class DistancePlace extends JavaPlugin implements CommandExecutor, TabCom
         int ms=getSpeed(p);
         if(ms<0) return;
         BukkitTask task=getServer().getScheduler().runTaskTimer(this,()->{
+            if(!p.isOnline()){ clearTask(p); return; }
             PlacementListener.attemptPlace(p,this);
         },msToTicks(ms),msToTicks(ms));
         setTask(p,task);

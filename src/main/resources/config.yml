@@ -1,1 +1,7 @@
 maxDistance: 30
+# /reach で設定できる上限(大きすぎるとレイキャストが重くなる)
+reachLimit: 256
+# /reach speed の最小間隔(ms)。50ms = 1tick
+minSpeedMs: 50
+# 視線の先にブロックが無いとき、reach の距離の空中に置くか
+airPlace: true
