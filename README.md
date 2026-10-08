@@ -12,7 +12,7 @@
 | `/reach speed <ms>` / `off` / `status` | 右クリック後の自動設置の間隔（左クリックで停止） |
 | `/reach mode on` / `off` / `status` | 遠距離設置の有効・無効 |
 
-権限 `distanceplace.use`（デフォルト: 全員）
+権限 `distanceplace.use`（デフォルト: 全員）。外すとコマンドだけでなく遠距離設置そのものも無効になる。
 
 ## config.yml
 

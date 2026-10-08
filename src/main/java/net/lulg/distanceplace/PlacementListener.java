@@ -4,6 +4,7 @@ import org.bukkit.Bukkit;
 import org.bukkit.GameMode;
 import org.bukkit.block.Block;
 import org.bukkit.block.BlockState;
+import org.bukkit.entity.LivingEntity;
 import org.bukkit.entity.Player;
 import org.bukkit.event.EventHandler;
 import org.bukkit.event.Event;
@@ -15,6 +16,7 @@ import org.bukkit.event.player.PlayerInteractEvent;
 import org.bukkit.event.player.PlayerQuitEvent;
 import org.bukkit.inventory.EquipmentSlot;
 import org.bukkit.inventory.ItemStack;
+import org.bukkit.util.BoundingBox;
 
 import java.util.List;
 
@@ -29,6 +31,7 @@ public class PlacementListener implements Listener {
         if(e.getHand()!=EquipmentSlot.HAND) return;
         if(e.useItemInHand()==Event.Result.DENY) return;
         Player p=e.getPlayer();
+        if(!p.hasPermission(PERMISSION)) return;
         if(e.getAction()==Action.LEFT_CLICK_AIR || e.getAction()==Action.LEFT_CLICK_BLOCK){
             plugin.clearTask(p);
             return;
@@ -40,7 +43,10 @@ public class PlacementListener implements Listener {
             e.setUseItemInHand(Event.Result.DENY);
             e.setUseInteractedBlock(Event.Result.DENY);
         }
-        if(plugin.getSpeed(p)>=0) plugin.startAutoTask(p);
+        // Opening a chest/door/etc. shouldn't kick off auto place.
+        boolean usedBlock=e.getAction()==Action.RIGHT_CLICK_BLOCK && e.getClickedBlock()!=null
+                && e.getClickedBlock().getType().isInteractable() && !p.isSneaking();
+        if(plugin.getSpeed(p)>=0 && !usedBlock) plugin.startAutoTask(p);
     }
 
     @EventHandler
@@ -48,7 +54,10 @@ public class PlacementListener implements Listener {
         plugin.forget(e.getPlayer());
     }
 
+    static final String PERMISSION="distanceplace.use";
+
     public static boolean attemptPlace(Player p, DistancePlace plugin){
+        if(p.getGameMode()==GameMode.SPECTATOR || !p.hasPermission(PERMISSION)) return false;
         ItemStack hand=p.getInventory().getItemInMainHand();
         if(hand==null || hand.getAmount()<=0 || !hand.getType().isBlock() || hand.getType().isAir()) return false;
         int max=plugin.getReach(p);
@@ -71,6 +80,10 @@ public class PlacementListener implements Listener {
             air=before;
             wall=target;
         }
+
+        // Vanilla refuses to place a block inside a mob or player (e.g. looking straight down
+        // would otherwise put it in the player's own feet and suffocate them).
+        if(!air.getWorld().getNearbyEntities(BoundingBox.of(air), en->en instanceof LivingEntity).isEmpty()) return false;
 
         BlockState replaced=air.getState();
         BlockPlaceEvent ev=new BlockPlaceEvent(air,replaced,wall,hand.clone(),p,true,EquipmentSlot.HAND);
